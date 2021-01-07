@@ -19,6 +19,7 @@ public class Crawler {
     private String word;
     private String link;
     private Socket clientSocket;
+    private BufferedOutputStream bufferedOutputStream;
 
     public Crawler(String word, String link){
         this.word = word;
@@ -29,12 +30,21 @@ public class Crawler {
     public Crawler(Socket clientSocket){
         this.clientSocket = clientSocket;
         visitedUrls = new LinkedList<>();
+        try {
+            bufferedOutputStream = new BufferedOutputStream(clientSocket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void init(){
         try {
             Scanner scanner = new Scanner(clientSocket.getInputStream());
+            bufferedOutputStream.write("Introduce key word to search: ".getBytes(StandardCharsets.UTF_8));
+            bufferedOutputStream.flush();
             word = scanner.nextLine();
+            bufferedOutputStream.write(("Introduce link to search: ").getBytes(StandardCharsets.UTF_8));
+            bufferedOutputStream.flush();
             link = scanner.nextLine();
         } catch (IOException e) {
             e.printStackTrace();
@@ -44,18 +54,18 @@ public class Crawler {
 
     public void linkTitle(String url){
 
-       if(url.startsWith("/")){
+        if(url.startsWith("/")){
 
             url = link + "/" + url;
 
         } else if (url.startsWith(word)) {
 
-           url = link + "/" + word + "/" + url;
+            url = link + "/" + word + "/" + url;
 
-       } else if (url.equals(link)){
+        } else if (url.equals(link)){
 
 
-       } else return;
+        } else return;
 
         Document doc = null;
 
@@ -69,7 +79,6 @@ public class Crawler {
         if(!(visitedUrls.contains(url))) {
             visitedUrls.add(url);
             try {
-                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(clientSocket.getOutputStream());
                 String defUrl = url + "\n";
                 bufferedOutputStream.write(defUrl.getBytes(StandardCharsets.UTF_8));
                 bufferedOutputStream.flush();
@@ -82,15 +91,19 @@ public class Crawler {
         //get all links and recursively call the processPage method
         Elements questions = doc.select("a[href]");
         System.out.println(questions.size() + "          " + url);
+
         for(Element link: questions) {
+
             String newUrl = link.attr("href");
             System.out.println(newUrl);
+
             if (newUrl.contains(word) && !(visitedUrls.contains(newUrl)) && !(newUrl.contains("index.php"))) {
 
                 linkTitle(link.attr("href"));
             }
         }
     }
-    }
+}
+
 
 
