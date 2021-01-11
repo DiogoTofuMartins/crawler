@@ -1,18 +1,33 @@
 package org.studies;
 
-import java.io.BufferedOutputStream;
+import org.academiadecodigo.bootcamp.Prompt;
+import org.academiadecodigo.bootcamp.scanners.menu.MenuInputScanner;
+import org.academiadecodigo.bootcamp.scanners.string.StringInputScanner;
+
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class Main {
 
-    private static ServerSocket socket;
-    private static Crawler crawler;
+    private ServerSocket socket;
+    private Crawler crawler;
+    private String[] options = {"W3schools", "Tutorialspoint", "Scihub"};
+    private Prompt prompt;
+    private MenuInputScanner menuInputScanner;
+    private Map<Integer, Crawler> crawlerMap;
+    private StringInputScanner scanner;
 
     public Main(int port){
+
+        crawlerMap = new HashMap<>();
+        crawlerMap.put(1, new W3schoolCrawler());
+        crawlerMap.put(2, new TutorialsCrawler());
+        crawlerMap.put(3, new ScihubCrawler());
         try {
             this.socket = new ServerSocket(port);
         } catch (IOException e) {
@@ -31,42 +46,39 @@ public class Main {
     public void search(Socket clientSocket) {
 
         String word = "";
-        String link = "";
-        BufferedOutputStream bufferedOutputStream;
 
         try {
-            bufferedOutputStream = new BufferedOutputStream(clientSocket.getOutputStream());
-            Scanner scanner = new Scanner(clientSocket.getInputStream());
-            bufferedOutputStream.write("Introduce key word to search: ".getBytes(StandardCharsets.UTF_8));
-            bufferedOutputStream.flush();
-            word = scanner.nextLine();
-            bufferedOutputStream.write(("Introduce site to search: ").getBytes(StandardCharsets.UTF_8));
-            bufferedOutputStream.flush();
-            link = scanner.nextLine();
+            prompt = new Prompt(clientSocket.getInputStream(), new PrintStream(clientSocket.getOutputStream()));
+            menuInputScanner = new MenuInputScanner(options);
+            scanner = new StringInputScanner();
 
-            if (link.contains("w3schools")) {
-                crawler = new W3schoolCrawler(clientSocket, word);
-            } else {
-                crawler = new ScihubCrawler(clientSocket, word);
-            }
+            menuInputScanner.setMessage("Which site you would like to search in? ");
+            crawler = crawlerMap.get(prompt.getUserInput(menuInputScanner));
+
+            scanner.setMessage("What concept would you like to search?\n");
+            word = prompt.getUserInput(scanner);
+
+            crawler.setClientSocket(clientSocket);
+            crawler.setPrompt(prompt);
+            crawler.setWord(word);
+
             crawler.init();
 
-            bufferedOutputStream.write(("Want to make another search? Y / N \n").getBytes(StandardCharsets.UTF_8));
-            bufferedOutputStream.flush();
+            menuInputScanner = new MenuInputScanner(new String[]{"yes", "no"});
+            menuInputScanner.setMessage("Want to make another search?");
 
-            if (scanner.nextLine().equals("y")) {
+            if (prompt.getUserInput(menuInputScanner) == 1) {
                 search(clientSocket);
             }
 
             clientSocket.close();
-            Main.socket.close();
+            socket.close();
             System.exit(1);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
-
 
     public Socket connect(){
         try {

@@ -12,21 +12,20 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Scanner;
 
-public class W3schoolCrawler implements Crawler{
+public class TutorialsCrawler implements Crawler{
 
     private List<String> visitedUrls;
     private String word;
-    private String link = "http://www.w3schools.com";
+    private String link = "https://www.tutorialspoint.com";
     private Socket clientSocket;
     private Prompt prompt;
 
-    public W3schoolCrawler(){
+    public TutorialsCrawler(){
 
         visitedUrls = new LinkedList<>();
-    }
 
+    }
 
     public void init(){
 
@@ -34,6 +33,7 @@ public class W3schoolCrawler implements Crawler{
     }
 
     public void linkTitle(String url){
+
 
         if(url.startsWith("/")){
 
@@ -43,7 +43,7 @@ public class W3schoolCrawler implements Crawler{
 
             url = link + "/" + word + "/" + url;
 
-        } else if (url.equals(link)){
+        } else if (url.startsWith(link)){
 
 
         } else return;
@@ -64,8 +64,9 @@ public class W3schoolCrawler implements Crawler{
                 String defUrl = url + "\n";
                 prompt.sendUserMsg(defUrl);
 
-
         } else return;
+
+
 
         //get all links and recursively call the processPage method
         Elements questions = doc.select("a[href]");
@@ -76,23 +77,23 @@ public class W3schoolCrawler implements Crawler{
 
             if (newUrl.contains(word) && !(visitedUrls.contains(newUrl)) && !(newUrl.contains("index.php"))) {
 
-                linkTitle(link.attr("href"));
+                linkTitle(newUrl);
             }
         }
     }
 
-    public void setWord(String word) {
-        this.word = word;
+    @Override
+    public void setPrompt(Prompt prompt) {
+        this.prompt = prompt;
     }
 
+    @Override
     public void setClientSocket(Socket clientSocket) {
         this.clientSocket = clientSocket;
     }
 
-    public void setPrompt(Prompt prompt) {
-        this.prompt = prompt;
+    @Override
+    public void setWord(String word) {
+        this.word = word;
     }
 }
-
-
-

@@ -1,5 +1,6 @@
 package org.studies;
 
+import org.academiadecodigo.bootcamp.Prompt;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,34 +18,28 @@ public class ScihubCrawler implements Crawler {
 
     private Map<String,String> visitedUrls;
     private Socket clientSocket;
-    private BufferedOutputStream bufferedOutputStream;
+    private Prompt prompt;
     private String word;
     private String link = "https://citationsy.com/archives/search.php?CitationsyArchives_search=" ;
 
-    public ScihubCrawler(Socket clientSocket, String word){
-        this.clientSocket = clientSocket;
-        this.word = word;
+    public ScihubCrawler(){
+
         this.visitedUrls = new HashMap<>();
-        try {
-            bufferedOutputStream = new BufferedOutputStream(clientSocket.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
     }
 
-
-    public void init() throws IOException {
+    public void init(){
 
         linkTitle(link + word);
 
     }
 
-    public void linkTitle(String url) throws IOException {
+    public void linkTitle(String url){
 
         if(visitedUrls.containsKey(url)){
             return;
         }
-        System.out.println(url);
+
         Document doc = null;
 
 
@@ -70,13 +65,27 @@ public class ScihubCrawler implements Crawler {
                     if(text.attr("class").equals("CitationsyArchives_search_result") && !(visitedUrls.containsValue(text.text()))){
 
                         visitedUrls.put(newUrl,text.text());
-                        bufferedOutputStream.write((newUrl + " :\n " + text.text() + "\n").getBytes(StandardCharsets.UTF_8));
-                        bufferedOutputStream.flush();
+                        prompt.sendUserMsg(newUrl + " :\n " + text.text() + "\n");
                         break;
                     }
                 }
                 linkTitle(newUrl);
             }
         }
+    }
+
+    @Override
+    public void setPrompt(Prompt prompt) {
+        this.prompt = prompt;
+    }
+
+    @Override
+    public void setClientSocket(Socket clientSocket) {
+        this.clientSocket = clientSocket;
+    }
+
+    @Override
+    public void setWord(String word) {
+        this.word = word;
     }
 }
